@@ -12,10 +12,8 @@ def positional_encoding(position, d_model):
                             np.arange(d_model)[np.newaxis, :],
                             d_model)
     
-    # 配列中の偶数インデックスにはsinを適用; 2i
     angle_rads[:, 0::2] = np.sin(angle_rads[:, 0::2])
     
-    # 配列中の奇数インデックスにはcosを適用; 2i+1
     angle_rads[:, 1::2] = np.cos(angle_rads[:, 1::2])
       
     pos_encoding = angle_rads[np.newaxis, ...]
@@ -25,24 +23,18 @@ def positional_encoding(position, d_model):
 def create_padding_mask(seq):
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
     
-    # アテンション・ロジットにパディングを追加するため
-    # さらに次元を追加する
     return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
 
 def scaled_dot_product_attention(q, k, v, mask):
 
     matmul_qk = tf.matmul(q, k, transpose_b=True)  # (..., seq_len_q, seq_len_k)
     
-    # matmul_qkをスケール
     dk = tf.cast(tf.shape(k)[-1], tf.float32)
     scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
-
-    # マスクをスケール済みテンソルに加算
+    
     if mask is not None:
       scaled_attention_logits += (mask * -1e9)  
 
-    # softmax は最後の軸(seq_len_k)について
-    # 合計が1となるように正規化
     attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)  # (..., seq_len_q, seq_len_k)
 
     output = tf.matmul(attention_weights, v)  # (..., seq_len_q, depth_v)
@@ -145,9 +137,6 @@ class MHA_collector(tf.keras.layers.Layer):
         self.dense = tf.keras.layers.Dense(d_model)
             
     def split_heads(self, x, batch_size):
-        """最後の次元を(num_heads, depth)に分割。
-        結果をshapeが(batch_size, num_heads, seq_len, depth)となるようにリシェイプする。
-        """
         x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
         return tf.transpose(x, perm=[0, 2, 1, 3])
         
@@ -1054,8 +1043,6 @@ class HLOSS(tf.keras.losses.Loss):
         HL_maingrp = tf.math.reduce_sum(self.relu(-1*L_maingrp + HM_maingrp)**2,axis=-1)
         HL_subgrp = tf.math.reduce_sum(self.relu(-1*L_subgrp + HM_subgrp)**2,axis=-1)
         HL_ALL = (HL_cls + HL_subcls + HL_maingrp+HL_subgrp)*self.LAMBDA
-        #if numbatch % 1000 == 0:
-        #    print(HL_ALL)
         return HL_ALL
     
     def call(self,y,p):
