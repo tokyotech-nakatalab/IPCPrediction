@@ -1,5 +1,5 @@
 # IPCPrediction
-Make the Binary Quadratic Model for sports scheduling problem. Definitions and comments in this code are based on the following paper.
+Definitions and comments in this code are based on the following paper.
 
 Title: 
 IPC Prediction of Patent Documents Using Neural Network with Attention for Hierarchical Structure
